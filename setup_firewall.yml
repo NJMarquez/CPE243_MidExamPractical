@@ -1,0 +1,49 @@
+---
+- name: Set up firewall on Ubuntu and CentOS servers
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update APT cache on Ubuntu
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Remove UFW on Ubuntu if present
+      ansible.builtin.package:
+        name: ufw
+        state: absent
+      when: ansible_os_family == "Debian"
+
+    - name: Install firewalld
+      ansible.builtin.package:
+        name: firewalld
+        state: present
+      when: ansible_os_family in ["RedHat", "Debian"]
+
+    - name: Enable and start firewalld service
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: yes
+      when: ansible_os_family in ["RedHat", "Debian"]
+
+    - name: Open SSH (port 22) in firewalld
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --add-port=22/tcp --permanent
+      when: ansible_os_family in ["RedHat", "Debian"]
+
+    - name: Open HTTP (port 80) in firewalld
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --add-port=80/tcp --permanent
+      when: ansible_os_family in ["RedHat", "Debian"]
+
+    - name: Open HTTPS (port 443) in firewalld
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --add-port=443/tcp --permanent
+      when: ansible_os_family in ["RedHat", "Debian"]
+
+    - name: Reload firewalld to apply changes
+      ansible.builtin.command:
+        cmd: firewall-cmd --reload
+      when: ansible_os_family in ["RedHat", "Debian"]
